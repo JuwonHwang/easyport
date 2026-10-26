@@ -22,8 +22,8 @@ struct PanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             section("포워딩") { forwardList }
-            section("번호 입력") { quickConnect }
             section("서버") { hostList }
+            section("번호 입력") { quickConnect }
             Divider()
             footer
         }
