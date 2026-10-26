@@ -51,6 +51,7 @@ struct PanelView: View {
             // 종료 확인 창(NSAlert)이 키 창이 될 때는 제외한다.
             guard let window = note.object as? NSWindow,
                   !String(describing: type(of: window)).contains("Alert") else { return }
+            manager.clearNotices()
             manager.reloadHosts()
             manager.refreshOnOpen(expanded)
         }
@@ -59,6 +60,12 @@ struct PanelView: View {
     // MARK: - 포워딩 목록
 
     @ViewBuilder private var forwardList: some View {
+        ForEach(manager.notices, id: \.self) { notice in
+            Label(notice, systemImage: "info.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
         if manager.forwards.isEmpty {
             Text("포워딩이 없다. 아래에서 서버의 포트를 고르거나 번호를 입력한다.")
                 .font(.callout)

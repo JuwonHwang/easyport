@@ -38,6 +38,7 @@ EasyPort connects from the Mac over SSH, so it opens web pages running inside th
 - **Claude badge**: Processes started by Claude Code get a `Claude` badge.
 - **Automatic grouping**: Only your ports that serve HTML are shown expanded. API and internal ports, and tool ports such as the VS Code server, are collapsed. Right-click to pin or hide a port.
 - **One click**: Click a port to forward it with `ssh -L` and open the browser. Dropped tunnels reconnect, and forwards that were on are restored when the app starts.
+- **Auto cleanup**: When a forwarded port's page title or command changes, the forward is renamed. When the process exits and the port closes, the forward is removed.
 - **Process tree**: Shows how each port was launched in one line, such as `SSH login › claude › uv`. Processes whose working directory was deleted are shown in orange.
 - **Remote stop**: Right-click to stop a leftover process. Right before stopping, EasyPort checks the process name and start time to confirm it is the same process.
 

@@ -68,6 +68,10 @@ final class ForwardManager: ObservableObject {
     /// 기존 결과를 보여 주면서 다시 조회 중인 서버.
     @Published private(set) var refreshing: Set<String> = []
     private var lastScan: [String: Date] = [:]
+    /// 앱 실행 중 조회에서 열려 있는 것을 확인한 "호스트:포트". 이 포트가 사라지면 포워딩을 지운다.
+    private var seenListening: Set<String> = []
+    /// 포워딩을 자동으로 지운 이유. 다음에 패널을 열 때 지운다.
+    @Published private(set) var notices: [String] = []
     /// 데모 데이터를 직접 넣은 스냅샷 렌더링 중이면 참. 이때는 실제 ssh 조회를 하지 않는다.
     private var previewMode = false
     @Published private(set) var overrides: [String: PortOverride] = [:]
@@ -273,12 +277,44 @@ final class ForwardManager: ObservableObject {
         lastScan[host] = Date()
         Task {
             do {
-                scans[host] = .loaded(try await PortScanner.scan(host: host))
+                let result = try await PortScanner.scan(host: host)
+                scans[host] = .loaded(result)
+                reconcileForwards(host: host, scan: result)
             } catch {
                 scans[host] = .failed(error.localizedDescription)
             }
             refreshing.remove(host)
         }
+    }
+
+    /// 조회 결과로 이 서버의 포워딩을 맞춘다. 조회가 성공했을 때만 호출한다.
+    /// - 포트가 열려 있으면 이름(페이지 제목, 명령줄)을 최신 정보로 바꾼다.
+    /// - 이전에 열려 있던 포트가 사라졌으면 프로세스가 내려간 것으로 보고 포워딩을 지운다.
+    ///   한 번도 열린 것을 확인하지 못한 포워딩(서버가 뜨기 전에 번호로 미리 연 경우)은 지우지 않는다.
+    private func reconcileForwards(host: String, scan: HostScan) {
+        let byPort = Dictionary(scan.ports.map { ($0.port, $0) }, uniquingKeysWith: { a, _ in a })
+        var changed = false
+        for f in forwards where f.host == host {
+            let key = portKey(host, f.remotePort)
+            if let port = byPort[f.remotePort] {
+                seenListening.insert(key)
+                let label = port.http?.title ?? port.details?.shortCommand ?? port.process
+                if let label, label != f.label, let i = forwards.firstIndex(where: { $0.id == f.id }) {
+                    forwards[i].label = label
+                    changed = true
+                }
+            } else if seenListening.contains(key) {
+                seenListening.remove(key)
+                notices.append("\(host):\(f.remotePort) \(f.label ?? "")의 프로세스가 종료되어 포워딩을 지웠다.")
+                remove(f.id)
+            }
+        }
+        if changed { save() }
+    }
+
+    /// 패널을 열 때 이전 알림을 지운다.
+    func clearNotices() {
+        notices.removeAll()
     }
 
     /// 처음 조회 중이거나 기존 결과를 두고 다시 조회 중이면 참.
