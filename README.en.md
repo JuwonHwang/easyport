@@ -103,7 +103,6 @@ flowchart LR
 swift build                                     # debug build
 .build/debug/EasyPort --snapshot /tmp/shots     # scan real servers and save the panel as PNG
 .build/debug/EasyPort --snapshot docs --demo    # generate screenshots from demo data
-.build/debug/EasyPort --gif docs                 # generate the README GIF from demo data (needs ffmpeg)
 ```
 
 `--snapshot` renders the panel in light and dark mode and exits without starting any forward. It is used to check the layout.
@@ -120,7 +119,6 @@ Pushing a tag that starts with `v` makes GitHub Actions build the universal app 
 | `LocalPort.swift` | Local port availability checks |
 | `PanelView.swift` | Panel UI |
 | `Snapshot.swift` | Snapshot rendering, demo data |
-| `DemoGIF.swift` | README GIF scene rendering |
 
 ## License
 

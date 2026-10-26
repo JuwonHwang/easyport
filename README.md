@@ -100,7 +100,6 @@ flowchart LR
 swift build                                     # 디버그 빌드
 .build/debug/EasyPort --snapshot /tmp/shots     # 실제 서버를 조회해 패널을 PNG로 저장
 .build/debug/EasyPort --snapshot docs --demo    # 가상 데이터로 스크린샷 생성
-.build/debug/EasyPort --gif docs                 # 가상 데이터로 README GIF 생성 (ffmpeg 필요)
 ```
 
 `--snapshot`은 포워딩을 시작하지 않고 패널을 라이트, 다크 모드로 렌더링한 뒤 종료해요. 레이아웃 점검에 써요.
@@ -117,7 +116,6 @@ swift build                                     # 디버그 빌드
 | `LocalPort.swift` | 로컬 포트 사용 여부 확인 |
 | `PanelView.swift` | 패널 UI |
 | `Snapshot.swift` | 스냅샷 렌더링, 데모 데이터 |
-| `DemoGIF.swift` | README GIF 장면 렌더링 |
 
 ## 라이선스
 

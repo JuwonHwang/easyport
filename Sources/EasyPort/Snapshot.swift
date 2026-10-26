@@ -134,8 +134,6 @@ enum DemoData {
         )
     }
 
-    static var gpuBoxLoading: ScanState { .loading }
-
     static let gpuBox: HostScan = {
         let procs: [ProcessDetails] = [
             proc(900, 1, "systemd", "/lib/systemd/systemd --user", elapsed: 86400 * 40),
