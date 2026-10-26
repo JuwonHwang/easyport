@@ -136,6 +136,11 @@ final class ForwardManager: ObservableObject {
         scans[host] = state
     }
 
+    /// 미리보기용으로 다시 조회 중 상태를 직접 지정한다.
+    func setPreviewRefreshing(_ host: String, _ on: Bool) {
+        if on { refreshing.insert(host) } else { refreshing.remove(host) }
+    }
+
     /// 데모 스냅샷용으로 포워딩 목록을 비운다. 저장하지 않는다.
     func clearPreviewForwards() {
         forwards.removeAll()

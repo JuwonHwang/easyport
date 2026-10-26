@@ -391,12 +391,15 @@ private struct HostSection: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
-                if manager.isScanning(host) {
-                    ProgressView()
-                        .controlSize(.small)
-                        .frame(width: 22, height: 22)
-                        .help("포트를 조회하는 중")
+                // 진행 표시가 나타나고 사라질 때 줄 높이가 바뀌어 패널 크기가 흔들리지 않도록, 줄 높이 안에 드는 크기의 자리를 항상 둔다.
+                ZStack {
+                    if manager.isScanning(host) {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .help("포트를 조회하는 중")
+                    }
                 }
+                .frame(width: 16, height: 16)
             }
             .padding(.vertical, 4)
             .padding(.horizontal, 6)
