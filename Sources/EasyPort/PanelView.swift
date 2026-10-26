@@ -18,6 +18,9 @@ struct PanelView: View {
     }
 
     /// initialExpanded를 주면 그 서버만 펼친다(스냅샷용). 주지 않으면 모두 펼친다.
+    /// macOS 메뉴바 패널의 모서리 반지름. 실제 패널 스크린샷에서 잰 값이다.
+    static let cornerRadius: CGFloat = 16
+
     init(initialExpanded: Set<String>? = nil) {
         let hosts = Set(ForwardManager.shared.hosts)
         _collapsed = State(initialValue: initialExpanded.map { hosts.subtracting($0) } ?? [])
@@ -38,7 +41,8 @@ struct PanelView: View {
         .padding(12)
         .frame(width: 440)
         // 메뉴바 패널의 기본 배경은 반투명이라 뒤 창(어두운 터미널 등)이 비쳐 글자 대비가 떨어진다. 불투명한 창 배경색으로 칠한다.
-        .background(Color(nsColor: .windowBackgroundColor))
+        // 패널 창은 내용을 둥글게 자르지 않으므로, 시스템 패널 모서리와 같은 둥근 사각형으로 칠해야 모서리가 각지지 않는다.
+        .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
         .onAppear {
             if quickHost.isEmpty || !manager.hosts.contains(quickHost) {
                 quickHost = manager.hosts.first ?? ""
