@@ -37,6 +37,8 @@ struct PanelView: View {
         }
         .padding(12)
         .frame(width: 440)
+        // 메뉴바 패널의 기본 배경은 반투명이라 뒤 창(어두운 터미널 등)이 비쳐 글자 대비가 떨어진다. 불투명한 창 배경색으로 칠한다.
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             if quickHost.isEmpty || !manager.hosts.contains(quickHost) {
                 quickHost = manager.hosts.first ?? ""
@@ -83,8 +85,10 @@ struct PanelView: View {
                 ForEach(manager.hosts, id: \.self) { Text($0).tag($0) }
             }
             .labelsHidden()
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // 실제 패널에서는 팝업 버튼이 남는 폭을 모두 채우므로 내용 폭에 고정한다.
+            .fixedSize()
             .accessibilityLabel("서버")
+            Spacer()
             Text("포트")
                 .foregroundStyle(.secondary)
                 .fixedSize()
