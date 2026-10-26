@@ -23,7 +23,7 @@
 - Solving it on the server side means exposing a port, and I don't want to worry about the security of that.
 - I know a port is open somewhere, but asking Claude again which one it was is also tedious.
 
-EasyPort connects from the Mac over SSH, so it opens web pages running inside the server without exposing any new port on the server. Expand a server to see its listening ports and the processes behind them. Click a port to forward it to `localhost` and open it in the browser.
+EasyPort connects from the Mac over SSH, so it opens web pages running inside the server without exposing any new port on the server. Open the menu bar panel to see each server's listening ports and the processes behind them. Click a port to forward it to `localhost` and open it in the browser.
 
 > [!NOTE]
 > The app's interface is currently in Korean only.
@@ -34,7 +34,7 @@ EasyPort connects from the Mac over SSH, so it opens web pages running inside th
   <img alt="EasyPort walkthrough" src="docs/demo-en.gif" width="496">
 </p>
 
-- **Port list**: Expand a server to see its listening ports with page title, command line, working directory, and uptime. Servers are read from `~/.ssh/config`.
+- **Port list**: Every time you open the panel, all servers in `~/.ssh/config` are scanned and their listening ports are shown with page title, command line, working directory, and uptime.
 - **Claude badge**: Processes started by Claude Code get a `Claude` badge.
 - **Automatic grouping**: Only your ports that serve HTML are shown expanded. API and internal ports, and tool ports such as the VS Code server, are collapsed. Right-click to pin or hide a port.
 - **One click**: Click a port to forward it with `ssh -L` and open the browser. Dropped tunnels reconnect, and forwards that were on are restored when the app starts.

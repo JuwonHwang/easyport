@@ -68,6 +68,8 @@ final class ForwardManager: ObservableObject {
     /// 기존 결과를 보여 주면서 다시 조회 중인 서버.
     @Published private(set) var refreshing: Set<String> = []
     private var lastScan: [String: Date] = [:]
+    /// 데모 데이터를 직접 넣은 스냅샷 렌더링 중이면 참. 이때는 실제 ssh 조회를 하지 않는다.
+    private var previewMode = false
     @Published private(set) var overrides: [String: PortOverride] = [:]
     /// 포워딩한 적이 있는 "호스트:포트".
     @Published private(set) var usedPorts: Set<String> = []
@@ -124,6 +126,7 @@ final class ForwardManager: ObservableObject {
 
     /// 데모 스냅샷용으로 서버 목록과 조회 결과를 직접 지정한다.
     func setPreviewHosts(_ names: [String], scans preview: [String: HostScan]) {
+        previewMode = true
         hosts = names
         for (host, scan) in preview { scans[host] = .loaded(scan) }
     }
@@ -256,7 +259,7 @@ final class ForwardManager: ObservableObject {
 
     /// 서버의 포트를 조회한다. 이전 결과가 있으면 화면을 비우지 않고 뒤에서 다시 조회한다.
     func scan(host: String) {
-        guard !refreshing.contains(host), scans[host].map({ if case .loading = $0 { false } else { true } }) ?? true else { return }
+        guard !previewMode, !refreshing.contains(host), scans[host].map({ if case .loading = $0 { false } else { true } }) ?? true else { return }
         if case .loaded = scans[host] {
             refreshing.insert(host)
         } else {
