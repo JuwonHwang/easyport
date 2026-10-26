@@ -64,6 +64,9 @@ final class ForwardManager: ObservableObject {
     @Published private(set) var status: [UUID: ForwardStatus] = [:]
     @Published private(set) var hosts: [String] = []
     @Published private(set) var scans: [String: ScanState] = [:]
+    /// 기존 결과를 보여 주면서 다시 조회 중인 서버.
+    @Published private(set) var refreshing: Set<String> = []
+    private var lastScan: [String: Date] = [:]
     @Published private(set) var overrides: [String: PortOverride] = [:]
     /// 포워딩한 적이 있는 "호스트:포트".
     @Published private(set) var usedPorts: Set<String> = []
@@ -234,14 +237,29 @@ final class ForwardManager: ObservableObject {
         NSPasteboard.general.setString(f.url.absoluteString, forType: .string)
     }
 
+    /// 서버의 포트를 조회한다. 이전 결과가 있으면 화면을 비우지 않고 뒤에서 다시 조회한다.
     func scan(host: String) {
-        scans[host] = .loading
+        guard !refreshing.contains(host), scans[host].map({ if case .loading = $0 { false } else { true } }) ?? true else { return }
+        if case .loaded = scans[host] {
+            refreshing.insert(host)
+        } else {
+            scans[host] = .loading
+        }
+        lastScan[host] = Date()
         Task {
             do {
                 scans[host] = .loaded(try await PortScanner.scan(host: host))
             } catch {
                 scans[host] = .failed(error.localizedDescription)
             }
+            refreshing.remove(host)
+        }
+    }
+
+    /// 패널을 열 때 호출한다. 펼친 서버 중 마지막 조회 후 5초가 지난 서버만 다시 조회한다.
+    func refreshOnOpen(_ hosts: Set<String>) {
+        for host in hosts where Date().timeIntervalSince(lastScan[host] ?? .distantPast) > 5 {
+            scan(host: host)
         }
     }
 

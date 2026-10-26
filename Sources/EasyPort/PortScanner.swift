@@ -207,6 +207,12 @@ enum PortScanner {
         return result
     }
 
+    /// Linux는 프로세스 이름(comm)을 15바이트에서 자르므로 한글 같은 다중 바이트 문자가 중간에 잘릴 수 있다.
+    /// 잘린 조각은 UTF-8 디코딩에서 U+FFFD(�)가 되므로 제거한다.
+    static func trimPartialCharacter(_ s: String) -> String {
+        s.replacingOccurrences(of: "\u{FFFD}", with: "")
+    }
+
     private static func decodeEntities(_ s: String) -> String {
         s.replacingOccurrences(of: "&amp;", with: "&")
             .replacingOccurrences(of: "&lt;", with: "<")
@@ -230,7 +236,7 @@ enum PortScanner {
             result[pid] = ProcessDetails(
                 pid: pid,
                 ppid: Int(f[1]) ?? 0,
-                name: f[3],
+                name: trimPartialCharacter(f[3]),
                 command: f[7].trimmingCharacters(in: .whitespaces),
                 directory: dir.isEmpty ? nil : dir,
                 elapsedSeconds: Int(f[2]),
@@ -257,7 +263,7 @@ enum PortScanner {
             let rest = fields.dropFirst(5).joined(separator: " ")
             var process: String?
             if let range = rest.range(of: #"users:\(\("([^"]+)""#, options: .regularExpression) {
-                process = String(rest[range].dropFirst(9).dropLast())
+                process = trimPartialCharacter(String(rest[range].dropFirst(9).dropLast()))
             }
             var pid: Int?
             if let range = rest.range(of: #"pid=[0-9]+"#, options: .regularExpression) {

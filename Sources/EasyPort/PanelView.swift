@@ -22,7 +22,7 @@ struct PanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             section("포워딩") { forwardList }
-            section("빠른 연결") { quickConnect }
+            section("번호 입력") { quickConnect }
             section("서버") { hostList }
             Divider()
             footer
@@ -33,6 +33,13 @@ struct PanelView: View {
             if quickHost.isEmpty || !manager.hosts.contains(quickHost) {
                 quickHost = manager.hosts.first ?? ""
             }
+        }
+        // 메뉴바 패널은 닫아도 뷰가 유지되어 onAppear가 다시 호출되지 않으므로, 창이 열릴 때(키 창이 될 때) 새로고침한다.
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { note in
+            // 종료 확인 창(NSAlert)이 키 창이 될 때는 제외한다.
+            guard let window = note.object as? NSWindow,
+                  !String(describing: type(of: window)).contains("Alert") else { return }
+            manager.refreshOnOpen(expanded)
         }
     }
 
@@ -57,7 +64,7 @@ struct PanelView: View {
         }
     }
 
-    // MARK: - 빠른 연결
+    // MARK: - 번호 입력
 
     private var quickConnect: some View {
         HStack(spacing: 6) {
@@ -326,7 +333,14 @@ private struct HostSection: View {
                         symbol: treeView ? "list.bullet" : "list.bullet.indent",
                         label: treeView ? "목록 보기" : "프로세스 트리 보기"
                     ) { treeView.toggle() }
-                    IconButton(symbol: "arrow.clockwise", label: "포트 다시 조회") { manager.scan(host: host) }
+                    if manager.refreshing.contains(host) {
+                        ProgressView()
+                            .controlSize(.small)
+                            .frame(width: 22, height: 22)
+                            .help("포트를 다시 조회하는 중")
+                    } else {
+                        IconButton(symbol: "arrow.clockwise", label: "포트 다시 조회") { manager.scan(host: host) }
+                    }
                 }
             }
             .padding(.vertical, 4)
