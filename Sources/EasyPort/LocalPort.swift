@@ -1,9 +1,12 @@
 import Foundation
 
 enum LocalPort {
-    /// 127.0.0.1과 ::1 모두에서 bind할 수 있으면 비어 있는 포트로 본다.
+    /// 127.0.0.1과 ::1 모두에서 bind할 수 있고, 연결을 받는 프로세스가 없으면 비어 있는 포트로 본다.
+    /// bind는 ssh와 같게 SO_REUSEADDR를 켜서 한다. 끄면 브라우저 연결이 닫힌 뒤 남는 TIME_WAIT 때문에
+    /// 아무도 듣지 않는 포트도 수십 초 동안 사용 중으로 보인다.
+    /// SO_REUSEADDR를 켜면 다른 프로세스가 모든 주소(*:port)에 bind한 경우를 놓칠 수 있어 연결로도 확인한다.
     static func isFree(_ port: Int) -> Bool {
-        canBind(port, ipv6: false) && canBind(port, ipv6: true)
+        canBind(port, ipv6: false) && canBind(port, ipv6: true) && !accepts(port)
     }
 
     /// 1024 미만 포트는 권한이 필요하므로 10000을 더한 번호부터 찾는다.
@@ -37,6 +40,8 @@ enum LocalPort {
         let fd = socket(ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0)
         guard fd >= 0 else { return false }
         defer { close(fd) }
+        var on: Int32 = 1
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, socklen_t(MemoryLayout<Int32>.size))
         if ipv6 {
             var addr = sockaddr_in6()
             addr.sin6_family = sa_family_t(AF_INET6)

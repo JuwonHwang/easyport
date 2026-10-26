@@ -38,7 +38,9 @@ echo "빌드 완료: $APP ($(lipo -archs "$APP/Contents/MacOS/EasyPort"))"
 case "$MODE" in
     install)
         DEST="$HOME/Applications/EasyPort.app"
-        pkill -x EasyPort 2>/dev/null && sleep 1 || true
+        # 이전 앱이 자기 ssh를 정리하고 끝날 때까지 최대 5초 기다린다. 먼저 띄우면 로컬 포트가 겹친다.
+        pkill -x EasyPort 2>/dev/null || true
+        for _ in $(seq 1 50); do pgrep -x EasyPort >/dev/null || break; sleep 0.1; done
         rm -rf "$DEST"
         mkdir -p "$HOME/Applications"
         cp -R "$APP" "$DEST"

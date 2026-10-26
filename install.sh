@@ -37,7 +37,8 @@ fi
 # 실행 중이면 종료한다. EasyPort는 종료할 때 자신이 띄운 포워딩용 ssh도 정리한다.
 if pgrep -x EasyPort >/dev/null; then
     pkill -x EasyPort || true
-    sleep 1
+    # 자기 ssh를 정리하고 끝날 때까지 최대 5초 기다린다.
+    for _ in $(seq 1 50); do pgrep -x EasyPort >/dev/null || break; sleep 0.1; done
 fi
 
 mkdir -p "$HOME/Applications"

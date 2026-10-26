@@ -176,8 +176,14 @@ final class ForwardManager: ObservableObject {
     }
 
     func shutdown() {
-        for (_, p) in processes where p.isRunning { p.terminate() }
+        let pids = processes.values.filter(\.isRunning).map(\.processIdentifier)
+        for p in processes.values where p.isRunning { p.terminate() }
         processes.removeAll()
+        // ssh가 로컬 포트를 놓기 전에 앱이 끝나면, 곧바로 다시 실행된 앱이 같은 포트를 열지 못한다. 최대 2초 기다린다.
+        // Process.isRunning은 메인 스레드가 멈춘 동안 갱신되지 않을 수 있어 PID로 직접 확인한다.
+        for _ in 0..<40 where pids.contains(where: { kill($0, 0) == 0 }) {
+            usleep(50_000)
+        }
     }
 
     func reloadHosts() {
@@ -442,14 +448,22 @@ final class ForwardManager: ObservableObject {
     // MARK: - ssh 프로세스
 
     private func start(_ id: UUID) {
-        guard let f = forwards.first(where: { $0.id == id }), processes[id] == nil else { return }
+        guard let f = forwards.first(where: { $0.id == id }), processes[id] == nil else {
+            debugLog("start 건너뜀 \(id) 실행 중=\(processes[id] != nil)")
+            return
+        }
+        debugLog("start \(f.host):\(f.remotePort) 로컬 \(f.localPort) free=\(LocalPort.isFree(f.localPort))")
         retryTasks[id]?.cancel()
         retryTasks[id] = nil
 
         // 포트를 점유한 것이 이전 실행에서 남은 EasyPort의 ssh라면 정리하고 다시 확인한다.
         if !LocalPort.isFree(f.localPort) { killOrphans() }
         guard LocalPort.isFree(f.localPort) else {
-            status[id] = .failed("로컬 포트 \(f.localPort)를 다른 프로세스가 사용 중이다. 메뉴에서 로컬 포트를 바꿀 수 있다.")
+            // 앱 재시작 직후 이전 ssh가 아직 포트를 놓지 않은 경우처럼 잠시 뒤 비는 경우가 있으므로 다시 시도한다.
+            scheduleRetry(
+                id, message: "로컬 포트 \(f.localPort)를 다른 프로세스가 사용 중이다. 메뉴에서 로컬 포트를 바꿀 수 있다.",
+                retryVerb: "다시 시도한다", fixedDelay: true
+            )
             return
         }
 
@@ -511,6 +525,7 @@ final class ForwardManager: ObservableObject {
     }
 
     private func processEnded(_ id: UUID, _ p: Process, message: String?) {
+        debugLog("ssh 종료 \(id) 코드=\(p.terminationStatus) 메시지=\(message ?? "-") 현재 프로세스와 같음=\(processes[id] === p)")
         // stop()으로 종료했거나 이미 교체된 프로세스는 무시한다.
         guard processes[id] === p else { return }
         processes[id] = nil
@@ -518,10 +533,18 @@ final class ForwardManager: ObservableObject {
             status[id] = .stopped
             return
         }
+        scheduleRetry(id, message: message ?? "연결이 끊어졌다.", retryVerb: "재연결한다")
+    }
+
+    /// 2초부터 최대 30초까지 간격을 늘려 다시 시작한다.
+    /// fixedDelay이면 2초 간격을 유지한다. 로컬 포트 사용 중은 보통 몇 초 안에 풀리므로 이 방식을 쓴다.
+    private func scheduleRetry(_ id: UUID, message: String, retryVerb: String, fixedDelay: Bool = false) {
         let attempt = (retryCounts[id] ?? 0) + 1
         retryCounts[id] = attempt
-        let delay = min(30, 1 << min(attempt, 5))
-        status[id] = .failed((message ?? "연결이 끊어졌다.") + " \(delay)초 후 재연결한다.")
+        let delay = fixedDelay ? 2 : min(30, 1 << min(attempt, 5))
+        status[id] = .failed(message + " \(delay)초 후 \(retryVerb).")
+        debugLog("재시도 예약 \(id) \(delay)초: \(message)")
+        retryTasks[id]?.cancel()
         retryTasks[id] = Task {
             try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled else { return }
@@ -590,5 +613,11 @@ final class ForwardManager: ObservableObject {
             usleep(50_000)
         }
         return killed.count
+    }
+
+    /// EASYPORT_LOG 환경 변수가 있으면 포워딩 시작, 종료, 재시도를 표준 오류로 기록한다. 문제 진단용이다.
+    private func debugLog(_ message: @autoclosure () -> String) {
+        guard ProcessInfo.processInfo.environment["EASYPORT_LOG"] != nil else { return }
+        FileHandle.standardError.write(Data("[\(Date())] \(message())\n".utf8))
     }
 }
