@@ -47,6 +47,8 @@ struct ProcessDetails: Hashable {
     let command: String
     let directory: String?
     let elapsedSeconds: Int?
+    /// Claude Code가 실행한 프로세스(환경 변수 CLAUDECODE=1).
+    var launchedByClaude = false
 
     /// Claude Code는 프로세스 이름이 버전 번호(예: 2.1.301)로 나오므로 명령줄로 판별한다.
     var displayName: String {
@@ -217,9 +219,9 @@ enum PortScanner {
         let home = lines.removeFirst()
         var result: [Int: ProcessDetails] = [:]
         for line in lines {
-            let f = line.split(separator: "\t", maxSplits: 5, omittingEmptySubsequences: false).map(String.init)
-            guard f.count == 6, let pid = Int(f[0]) else { continue }
-            var dir = f[4]
+            let f = line.split(separator: "\t", maxSplits: 6, omittingEmptySubsequences: false).map(String.init)
+            guard f.count == 7, let pid = Int(f[0]) else { continue }
+            var dir = f[5]
             if !home.isEmpty, dir == home || dir.hasPrefix(home + "/") {
                 dir = "~" + dir.dropFirst(home.count)
             }
@@ -227,9 +229,10 @@ enum PortScanner {
                 pid: pid,
                 ppid: Int(f[1]) ?? 0,
                 name: f[3],
-                command: f[5].trimmingCharacters(in: .whitespaces),
+                command: f[6].trimmingCharacters(in: .whitespaces),
                 directory: dir.isEmpty ? nil : dir,
-                elapsedSeconds: Int(f[2])
+                elapsedSeconds: Int(f[2]),
+                launchedByClaude: f[4] == "1"
             )
         }
         return result

@@ -112,9 +112,12 @@ private final class KeyWindow: NSWindow {
 private enum DemoData {
     private static func proc(
         _ pid: Int, _ ppid: Int, _ name: String, _ command: String = "",
-        dir: String? = nil, elapsed: Int = 86400 * 3
+        dir: String? = nil, elapsed: Int = 86400 * 3, claude: Bool = false
     ) -> ProcessDetails {
-        ProcessDetails(pid: pid, ppid: ppid, name: name, command: command, directory: dir, elapsedSeconds: elapsed)
+        ProcessDetails(
+            pid: pid, ppid: ppid, name: name, command: command, directory: dir,
+            elapsedSeconds: elapsed, launchedByClaude: claude
+        )
     }
 
     private static func port(
@@ -139,6 +142,9 @@ private enum DemoData {
             proc(4101, 4100, "sshd", "sshd: me@pts/1", elapsed: 3600 * 2),
             proc(4102, 4101, "bash", "-bash", elapsed: 3600 * 2),
             proc(4200, 4102, "jupyter-lab", "python jupyter-lab --no-browser --port 8888", dir: "~/notebooks", elapsed: 3600 * 2),
+            proc(4300, 4102, "claude", "claude", dir: "~/research", elapsed: 3600),
+            proc(4310, 4300, "bash", "/bin/bash -c uv run python monitor.py --port 8790", dir: "~/research", elapsed: 1800, claude: true),
+            proc(4311, 4310, "python", "python monitor.py --port 8790", dir: "~/research", elapsed: 1800, claude: true),
             proc(5000, 1, "python", "python -m vllm.entrypoints.openai.api_server --port 8080", dir: "~/serving", elapsed: 86400 * 9),
             proc(5001, 5000, "VLLM::EngineCor", "VLLM::EngineCore", dir: "~/serving", elapsed: 86400 * 9),
             proc(700, 1, "code-1a2b3c4d5e", "~/.vscode-server/code-1a2b3c4d5e agent host", elapsed: 86400 * 20),
@@ -149,6 +155,7 @@ private enum DemoData {
             port(8000, byPid[1201], http: HTTPProbe(status: 200, isHTML: true, title: "Model Dashboard"), bind: "0.0.0.0"),
             port(8001, byPid[3100], http: HTTPProbe(status: 404, isHTML: false, title: nil)),
             port(8080, byPid[5000], http: HTTPProbe(status: 404, isHTML: false, title: nil)),
+            port(8790, byPid[4311], http: HTTPProbe(status: 200, isHTML: true, title: "Experiment Monitor")),
             port(8888, byPid[4200], http: HTTPProbe(status: 302, isHTML: false, title: "JupyterLab")),
             port(11434, nil, http: HTTPProbe(status: 200, isHTML: false, title: nil)),
             port(35111, byPid[700], http: HTTPProbe(status: 403, isHTML: false, title: nil)),

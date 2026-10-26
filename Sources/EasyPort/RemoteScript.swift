@@ -8,7 +8,8 @@ enum RemoteScript {
     /// 출력 구성:
     /// 1. ss 출력
     /// 2. procMarker, 홈 디렉터리 한 줄, 포트를 연 프로세스와 그 조상마다
-    ///    "pid<TAB>ppid<TAB>실행 초<TAB>comm<TAB>작업 디렉터리<TAB>명령줄"
+    ///    "pid<TAB>ppid<TAB>실행 초<TAB>comm<TAB>Claude 여부(1/0)<TAB>작업 디렉터리<TAB>명령줄".
+    ///    Claude 여부는 환경 변수 CLAUDECODE=1 유무다. Claude Code의 Bash 도구가 실행한 프로세스와 그 자식에 있다.
     /// 3. httpMarker, 포트마다 "port<TAB>HTTP 상태<TAB>html 여부(1/0)<TAB>페이지 제목".
     ///    curl이 없으면 이 구역은 비어 있다. 포트마다 병렬로 1초 제한을 두고 요청한다.
     static let scan = #"""
@@ -23,8 +24,10 @@ enum RemoteScript {
         case "$seen" in *" $c "*) break ;; esac
         seen="$seen$c "
         pp=$(ps -o ppid= -p "$c" 2>/dev/null | tr -d ' ')
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$c" "${pp:-0}" \
-          "$(ps -o etimes= -p "$c" 2>/dev/null | tr -d ' ')" "$(cat "/proc/$c/comm" 2>/dev/null)" \
+        cl=0
+        tr '\0' '\n' < "/proc/$c/environ" 2>/dev/null | grep -qx 'CLAUDECODE=1' && cl=1
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$c" "${pp:-0}" \
+          "$(ps -o etimes= -p "$c" 2>/dev/null | tr -d ' ')" "$(cat "/proc/$c/comm" 2>/dev/null)" "$cl" \
           "$(readlink "/proc/$c/cwd" 2>/dev/null)" "$(tr '\0' ' ' < "/proc/$c/cmdline" 2>/dev/null)"
         c=$pp
       done

@@ -264,6 +264,21 @@ private struct ErrorFooter: ViewModifier {
     }
 }
 
+/// Claude Code가 띄운 프로세스 표시.
+private struct ClaudeBadge: View {
+    var body: some View {
+        Text("Claude")
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(Color(red: 0.85, green: 0.47, blue: 0.34))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(Color(red: 0.85, green: 0.47, blue: 0.34).opacity(0.15)))
+            .fixedSize()
+            .help("Claude Code가 띄운 프로세스 (환경 변수 CLAUDECODE=1)")
+            .accessibilityLabel("Claude Code가 띄운 프로세스")
+    }
+}
+
 /// 아이콘만 있는 버튼. 클릭 영역을 22pt로 넓히고 접근성 라벨과 툴팁을 붙인다.
 private struct IconButton: View {
     let symbol: String
@@ -450,6 +465,9 @@ private struct PortRow: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .layoutPriority(1)
+                    if port.details?.launchedByClaude == true {
+                        ClaudeBadge()
+                    }
                     if pinned {
                         Image(systemName: "pin.fill")
                             .font(.caption2)
@@ -555,6 +573,9 @@ private struct ProcessTreeRow: View {
                 .font(.system(.caption2, design: .monospaced))
                 .foregroundStyle(.tertiary)
                 .fixedSize()
+            if !row.ports.isEmpty && process.launchedByClaude {
+                ClaudeBadge()
+            }
             ForEach(row.ports) { port in
                 portChip(port)
             }
