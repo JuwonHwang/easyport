@@ -36,6 +36,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let args = CommandLine.arguments
+        if let i = args.firstIndex(of: "--gif"), i + 1 < args.count {
+            DemoGIF.run(outputDir: args[i + 1])
+            return
+        }
         if let i = args.firstIndex(of: "--snapshot"), i + 1 < args.count {
             Snapshot.run(outputDir: args[i + 1], demo: args.contains("--demo"))
             return

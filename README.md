@@ -27,30 +27,9 @@ EasyPort는 맥에서 SSH로 연결해서, 서버에 포트를 새로 열지 않
 
 ## 기능
 
-<div align="center">
-
-<table>
-  <tr>
-    <td align="center"><b>목록 보기</b></td>
-    <td align="center"><b>프로세스 트리 보기</b></td>
-  </tr>
-  <tr>
-    <td>
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-list-dark.png">
-        <img alt="목록 보기" src="docs/screenshot-list-light.png" width="420">
-      </picture>
-    </td>
-    <td>
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-tree-dark.png">
-        <img alt="프로세스 트리 보기" src="docs/screenshot-tree-light.png" width="420">
-      </picture>
-    </td>
-  </tr>
-</table>
-
-</div>
+<p align="center">
+  <img alt="EasyPort 사용 흐름" src="docs/demo-ko.gif" width="496">
+</p>
 
 - **포트 목록**: 서버를 펼치면 열린 포트를 페이지 제목, 명령줄, 작업 디렉터리, 실행 시간과 함께 보여 줘요. 서버 목록은 `~/.ssh/config`에서 읽어요.
 - **Claude 표시**: Claude Code가 띄운 프로세스에 `Claude` 배지를 붙여요.
@@ -120,7 +99,8 @@ flowchart LR
 ```sh
 swift build                                     # 디버그 빌드
 .build/debug/EasyPort --snapshot /tmp/shots     # 실제 서버를 조회해 패널을 PNG로 저장
-.build/debug/EasyPort --snapshot docs --demo    # 가상 데이터로 README 스크린샷 생성
+.build/debug/EasyPort --snapshot docs --demo    # 가상 데이터로 스크린샷 생성
+.build/debug/EasyPort --gif docs                 # 가상 데이터로 README GIF 생성 (ffmpeg 필요)
 ```
 
 `--snapshot`은 포워딩을 시작하지 않고 패널을 라이트, 다크 모드로 렌더링한 뒤 종료해요. 레이아웃 점검에 써요.
@@ -137,6 +117,7 @@ swift build                                     # 디버그 빌드
 | `LocalPort.swift` | 로컬 포트 사용 여부 확인 |
 | `PanelView.swift` | 패널 UI |
 | `Snapshot.swift` | 스냅샷 렌더링, 데모 데이터 |
+| `DemoGIF.swift` | README GIF 장면 렌더링 |
 
 ## 라이선스
 

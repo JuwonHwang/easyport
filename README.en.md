@@ -30,30 +30,9 @@ EasyPort connects from the Mac over SSH, so it opens web pages running inside th
 
 ## Features
 
-<div align="center">
-
-<table>
-  <tr>
-    <td align="center"><b>List view</b></td>
-    <td align="center"><b>Process tree view</b></td>
-  </tr>
-  <tr>
-    <td>
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-list-dark.png">
-        <img alt="List view" src="docs/screenshot-list-light.png" width="420">
-      </picture>
-    </td>
-    <td>
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-tree-dark.png">
-        <img alt="Process tree view" src="docs/screenshot-tree-light.png" width="420">
-      </picture>
-    </td>
-  </tr>
-</table>
-
-</div>
+<p align="center">
+  <img alt="EasyPort walkthrough" src="docs/demo-en.gif" width="496">
+</p>
 
 - **Port list**: Expand a server to see its listening ports with page title, command line, working directory, and uptime. Servers are read from `~/.ssh/config`.
 - **Claude badge**: Processes started by Claude Code get a `Claude` badge.
@@ -123,7 +102,8 @@ flowchart LR
 ```sh
 swift build                                     # debug build
 .build/debug/EasyPort --snapshot /tmp/shots     # scan real servers and save the panel as PNG
-.build/debug/EasyPort --snapshot docs --demo    # generate README screenshots from demo data
+.build/debug/EasyPort --snapshot docs --demo    # generate screenshots from demo data
+.build/debug/EasyPort --gif docs                 # generate the README GIF from demo data (needs ffmpeg)
 ```
 
 `--snapshot` renders the panel in light and dark mode and exits without starting any forward. It is used to check the layout.
@@ -140,6 +120,7 @@ Pushing a tag that starts with `v` makes GitHub Actions build the universal app 
 | `LocalPort.swift` | Local port availability checks |
 | `PanelView.swift` | Panel UI |
 | `Snapshot.swift` | Snapshot rendering, demo data |
+| `DemoGIF.swift` | README GIF scene rendering |
 
 ## License
 

@@ -82,6 +82,11 @@ enum Snapshot {
                 panel
             }
         }
+        renderView(view, appearance: appearance, to: path)
+    }
+
+    /// 임의의 SwiftUI 뷰를 PNG로 렌더링한다.
+    static func renderView(_ view: some View, appearance: NSAppearance.Name, to path: String) {
         let hosting = NSHostingView(rootView: view)
         hosting.appearance = NSAppearance(named: appearance)
         let size = hosting.fittingSize
@@ -101,7 +106,7 @@ enum Snapshot {
     }
 }
 
-private final class KeyWindow: NSWindow {
+final class KeyWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
 }
@@ -109,7 +114,7 @@ private final class KeyWindow: NSWindow {
 // MARK: - 데모 데이터
 
 /// README 스크린샷용 가상 서버. 실제 서버 정보를 담지 않는다.
-private enum DemoData {
+enum DemoData {
     private static func proc(
         _ pid: Int, _ ppid: Int, _ name: String, _ command: String = "",
         dir: String? = nil, elapsed: Int = 86400 * 3, claude: Bool = false
@@ -128,6 +133,8 @@ private enum DemoData {
             pid: p?.pid, details: p, http: http
         )
     }
+
+    static var gpuBoxLoading: ScanState { .loading }
 
     static let gpuBox: HostScan = {
         let procs: [ProcessDetails] = [

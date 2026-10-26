@@ -124,6 +124,17 @@ final class ForwardManager: ObservableObject {
         for (host, scan) in preview { scans[host] = .loaded(scan) }
     }
 
+    /// 데모 스냅샷용으로 한 서버의 조회 상태를 직접 지정한다.
+    func setPreviewScan(_ host: String, _ state: ScanState) {
+        scans[host] = state
+    }
+
+    /// 데모 스냅샷용으로 포워딩 목록을 비운다. 저장하지 않는다.
+    func clearPreviewForwards() {
+        forwards.removeAll()
+        status.removeAll()
+    }
+
     /// 스냅샷 렌더링용으로 포워딩을 저장하지 않고 추가한다.
     func addPreviewForward(_ f: Forward) {
         forwards.append(f)
