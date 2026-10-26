@@ -282,7 +282,7 @@ final class ForwardManager: ObservableObject {
             (status, _, stderr) = try await PortScanner.run(
                 "/usr/bin/ssh",
                 ["-o", "BatchMode=yes", "-o", "ConnectTimeout=8", host, "sh", "-s"],
-                input: RemoteScript.terminate(pid: process.pid, name: process.name, force: force)
+                input: RemoteScript.terminate(pid: process.pid, name: process.name, startTime: process.startTime, force: force)
             )
         } catch {
             inform("종료 실패", "ssh를 실행하지 못했다: \(error.localizedDescription)")
@@ -291,7 +291,7 @@ final class ForwardManager: ObservableObject {
         switch status {
         case 0, 3:
             if status == 3 {
-                inform("종료하지 않음", "PID \(process.pid)가 이미 종료되었거나 다른 프로세스로 바뀌었다. 포트 목록을 다시 조회한다.")
+                inform("종료하지 않음", "PID \(process.pid)가 이미 종료되었거나, 조회 이후 다른 프로세스가 같은 PID를 쓰고 있다. 포트 목록을 다시 조회한다.")
             }
             for f in forwards where f.host == host && ports.contains(f.remotePort) {
                 setEnabled(f.id, false)

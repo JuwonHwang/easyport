@@ -49,6 +49,8 @@ struct ProcessDetails: Hashable {
     let elapsedSeconds: Int?
     /// Claude Code가 실행한 프로세스(환경 변수 CLAUDECODE=1).
     var launchedByClaude = false
+    /// /proc/<pid>/stat의 starttime. 종료 전에 같은 프로세스인지 확인할 때 쓴다.
+    var startTime: String? = nil
 
     /// Claude Code는 프로세스 이름이 버전 번호(예: 2.1.301)로 나오므로 명령줄로 판별한다.
     var displayName: String {
@@ -219,9 +221,9 @@ enum PortScanner {
         let home = lines.removeFirst()
         var result: [Int: ProcessDetails] = [:]
         for line in lines {
-            let f = line.split(separator: "\t", maxSplits: 6, omittingEmptySubsequences: false).map(String.init)
-            guard f.count == 7, let pid = Int(f[0]) else { continue }
-            var dir = f[5]
+            let f = line.split(separator: "\t", maxSplits: 7, omittingEmptySubsequences: false).map(String.init)
+            guard f.count == 8, let pid = Int(f[0]) else { continue }
+            var dir = f[6]
             if !home.isEmpty, dir == home || dir.hasPrefix(home + "/") {
                 dir = "~" + dir.dropFirst(home.count)
             }
@@ -229,10 +231,11 @@ enum PortScanner {
                 pid: pid,
                 ppid: Int(f[1]) ?? 0,
                 name: f[3],
-                command: f[6].trimmingCharacters(in: .whitespaces),
+                command: f[7].trimmingCharacters(in: .whitespaces),
                 directory: dir.isEmpty ? nil : dir,
                 elapsedSeconds: Int(f[2]),
-                launchedByClaude: f[4] == "1"
+                launchedByClaude: f[4] == "1",
+                startTime: f[5].isEmpty ? nil : f[5]
             )
         }
         return result
