@@ -5,7 +5,8 @@ struct PanelView: View {
     @EnvironmentObject private var manager: ForwardManager
     @AppStorage("lastHost") private var quickHost = ""
     @State private var quickPort = ""
-    @State private var expanded: Set<String>
+    /// 서버는 기본으로 모두 펼친다. 사용자가 접은 서버만 기록하므로 SSH 설정에 새로 추가한 서버도 펼친 상태로 나온다.
+    @State private var collapsed: Set<String>
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
     @AppStorage("treeView") private var treeView = false
@@ -16,8 +17,14 @@ struct PanelView: View {
         return min(720, max(300, screen - 360))
     }
 
-    init(initialExpanded: Set<String> = []) {
-        _expanded = State(initialValue: initialExpanded)
+    /// initialExpanded를 주면 그 서버만 펼친다(스냅샷용). 주지 않으면 모두 펼친다.
+    init(initialExpanded: Set<String>? = nil) {
+        let hosts = Set(ForwardManager.shared.hosts)
+        _collapsed = State(initialValue: initialExpanded.map { hosts.subtracting($0) } ?? [])
+    }
+
+    private var expanded: Set<String> {
+        Set(manager.hosts).subtracting(collapsed)
     }
 
     var body: some View {
@@ -34,6 +41,8 @@ struct PanelView: View {
             if quickHost.isEmpty || !manager.hosts.contains(quickHost) {
                 quickHost = manager.hosts.first ?? ""
             }
+            // 서버가 기본으로 펼쳐져 있어 펼칠 때 조회가 시작되지 않으므로, 처음 나타날 때 조회한다.
+            manager.refreshOnOpen(expanded)
         }
         // 메뉴바 패널은 닫아도 뷰가 유지되어 onAppear가 다시 호출되지 않으므로, 창이 열릴 때(키 창이 될 때) 새로고침한다.
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { note in
@@ -119,13 +128,13 @@ struct PanelView: View {
 
     private func binding(for host: String) -> Binding<Bool> {
         Binding(
-            get: { expanded.contains(host) },
+            get: { !collapsed.contains(host) },
             set: { open in
                 if open {
-                    expanded.insert(host)
+                    collapsed.remove(host)
                     if manager.scans[host] == nil { manager.scan(host: host) }
                 } else {
-                    expanded.remove(host)
+                    collapsed.insert(host)
                 }
             }
         )
@@ -182,18 +191,17 @@ struct PanelView: View {
         }
     }
 
-    /// 목록/트리 전환은 모든 서버에 함께 적용되고, 새로고침은 펼친 서버를 모두 다시 조회하므로 제목 줄에 한 번만 둔다.
+    /// 목록/트리 전환은 모든 서버에 함께 적용되고 새로고침은 모든 서버를 다시 조회하므로, 제목 줄에 한 번만 둔다.
+    /// 펼침 여부와 관계없이 항상 보인다.
     @ViewBuilder private var hostControls: some View {
-        if !expanded.isEmpty {
-            IconButton(
-                symbol: treeView ? "list.bullet" : "list.bullet.indent",
-                label: treeView ? "목록 보기" : "프로세스 트리 보기"
-            ) { treeView.toggle() }
-            IconButton(symbol: "arrow.clockwise", label: "펼친 서버 다시 조회") {
-                for host in expanded { manager.scan(host: host) }
-            }
-            .disabled(expanded.contains { manager.isScanning($0) })
+        IconButton(
+            symbol: treeView ? "list.bullet" : "list.bullet.indent",
+            label: treeView ? "목록 보기" : "프로세스 트리 보기"
+        ) { treeView.toggle() }
+        IconButton(symbol: "arrow.clockwise", label: "모든 서버 다시 조회") {
+            for host in manager.hosts { manager.scan(host: host) }
         }
+        .disabled(manager.hosts.contains { manager.isScanning($0) })
     }
 }
 
