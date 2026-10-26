@@ -207,8 +207,7 @@ private struct ForwardRow: View {
                     get: { forward.enabled },
                     set: { manager.setEnabled(forward.id, $0) }
                 ))
-                .toggleStyle(.switch)
-                .controlSize(.mini)
+                .toggleStyle(StatusSwitchStyle())
                 .labelsHidden()
                 .padding(.horizontal, 2)
                 Menu {
@@ -285,6 +284,30 @@ private struct ClaudeBadge: View {
             .fixedSize()
             .help("Claude Code가 띄운 프로세스 (환경 변수 CLAUDECODE=1)")
             .accessibilityLabel("Claude Code가 띄운 프로세스")
+    }
+}
+
+/// 직접 그리는 스위치. 시스템 스위치는 창이 비활성이면(브라우저가 앞에 있을 때 등) 켜진 상태도 회색으로 그려서,
+/// 창 상태와 관계없이 켜짐은 초록, 꺼짐은 회색으로 그린다.
+private struct StatusSwitchStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Capsule()
+            .fill(configuration.isOn ? Color.green : Color.primary.opacity(0.15))
+            .frame(width: 26, height: 15)
+            .overlay(alignment: configuration.isOn ? .trailing : .leading) {
+                Circle()
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.25), radius: 0.5, y: 0.5)
+                    .padding(1.5)
+            }
+            .animation(.easeOut(duration: 0.15), value: configuration.isOn)
+            .contentShape(Capsule())
+            .onTapGesture { configuration.isOn.toggle() }
+            .accessibilityElement()
+            .accessibilityLabel("포워딩 켜기")
+            .accessibilityValue(configuration.isOn ? "켜짐" : "꺼짐")
+            .accessibilityAddTraits(.isButton)
+            .help(configuration.isOn ? "포워딩 끄기" : "포워딩 켜기")
     }
 }
 
