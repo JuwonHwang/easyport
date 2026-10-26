@@ -55,37 +55,12 @@ EasyPort connects from the Mac over SSH, so it opens web pages running inside th
 
 </div>
 
-### Port discovery
-- **Server list**: Reads `Host` aliases from `~/.ssh/config`, following `Include` directives.
-- **Listening ports**: Expanding a server shows its listening TCP ports with the process name, command line, working directory, and uptime.
-- **Web page detection**: Sends an HTTP request from inside the server, only to ports owned by your own processes, to check whether the port serves HTML. The page `<title>` is used as the name, so a port shows up as `TensorBoard` instead of `python`.
-- **Claude Code badge**: Processes started by Claude Code get a `Claude` badge, detected from the `CLAUDECODE=1` environment variable of the process. You no longer need to ask Claude which port it opened.
-- **Automatic grouping**: Ports are sorted into three groups.
-
-  | Group | Condition | Default |
-  |---|---|---|
-  | Web pages | Your process and responds with HTML, or a port you have forwarded before | Expanded |
-  | Other services | Your process and responds with a non-HTML API or does not respond | Collapsed |
-  | Hidden | Other users' processes, VS Code server, Claude Code, ssh tunnels, system ports below 1024 | Collapsed |
-
-  Right-click a port to set `Always show` or `Hide`.
-
-### Process tree
-- Follows the parents of each listening process up to just below PID 1 and shows them as a hierarchy.
-- Skips sshd and shell steps and summarizes the launch path in one line, for example `SSH login › claude › uv`, `systemd service › uv`, or `tmux`.
-- Processes whose working directory has been deleted (for example, a server started from a removed git worktree) are shown in orange.
-
-### Forwarding
-- **One click**: Clicking a port forwards it with `ssh -L` and opens the browser once the tunnel is up.
-- **Quick connect**: Pick a server and type a port number to open it.
-- **Status**: Connected, connecting, error, or off. Errors show the ssh error message as is.
-- **Reconnect**: When ssh drops, EasyPort reconnects with a delay starting at 2 seconds, up to 30 seconds. It also reconnects after the Mac wakes from sleep.
-- **Restore**: Forwards that are switched on are restored when the app starts again.
-- **Local port selection**: Uses the same number as the remote port, or the next free number if it is taken.
-
-### Stopping remote processes
-- Right-click a listening process to stop it. EasyPort sends SIGTERM, and if the process has not exited within 3 seconds, it asks whether to send SIGKILL.
-- Right before sending the signal, it checks on the server that the process name and start time of that PID still match the scan. If the PID has been reused by another process in the meantime, nothing is stopped.
+- **Port list**: Expand a server to see its listening ports with page title, command line, working directory, and uptime. Servers are read from `~/.ssh/config`.
+- **Claude badge**: Processes started by Claude Code get a `Claude` badge.
+- **Automatic grouping**: Only your ports that serve HTML are shown expanded. API and internal ports, and tool ports such as the VS Code server, are collapsed. Right-click to pin or hide a port.
+- **One click**: Click a port to forward it with `ssh -L` and open the browser. Dropped tunnels reconnect, and forwards that were on are restored when the app starts.
+- **Process tree**: Shows how each port was launched in one line, such as `SSH login › claude › uv`. Processes whose working directory was deleted are shown in orange.
+- **Remote stop**: Right-click to stop a leftover process. Right before stopping, EasyPort checks the process name and start time to confirm it is the same process.
 
 ## Installation
 
