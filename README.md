@@ -82,7 +82,20 @@ EasyPort는 이 두 가지를 위해 만들었어요. 서버를 펼치면 열린
 
 ## 설치
 
-요구 사항: macOS 14 이상, Xcode Command Line Tools (`xcode-select --install`). Xcode 앱은 필요 없어요.
+macOS 14 이상에서 실행돼요. 터미널에 한 줄을 붙여 넣으면 최신 릴리스를 받아 `~/Applications`에 설치하고 실행해요.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/JuwonHwang/easyport/main/install.sh | bash
+```
+
+같은 명령을 다시 실행하면 최신 버전으로 업데이트돼요. 앱은 Apple Silicon과 Intel 맥 모두에서 실행되는 유니버설 바이너리예요.
+
+서버 접속은 키 인증이어야 해요. EasyPort는 ssh를 `BatchMode=yes`로 실행해서 비밀번호를 묻지 않아요. 터미널에서 `ssh <호스트>`가 비밀번호 없이 접속되면 EasyPort에서도 접속돼요.
+
+<details>
+<summary>소스에서 빌드하기</summary>
+
+Xcode Command Line Tools(`xcode-select --install`)가 필요해요. Xcode 앱은 필요 없어요.
 
 ```sh
 git clone https://github.com/JuwonHwang/easyport.git
@@ -92,7 +105,7 @@ cd easyport
 
 `./build.sh`만 실행하면 `build/EasyPort.app`을 만들고 설치는 하지 않아요.
 
-서버 접속은 키 인증이어야 해요. EasyPort는 ssh를 `BatchMode=yes`로 실행해서 비밀번호를 묻지 않아요. 터미널에서 `ssh <호스트>`가 비밀번호 없이 접속되면 EasyPort에서도 접속돼요.
+</details>
 
 > [!NOTE]
 > 사설 IP(`192.168.x.x` 등)의 서버에 처음 접속할 때 macOS가 로컬 네트워크 접근 허용을 물어요. 거부했다면 시스템 설정 > 개인정보 보호 및 보안 > 로컬 네트워크에서 EasyPort를 켜 주세요.
@@ -132,6 +145,8 @@ swift build                                     # 디버그 빌드
 ```
 
 `--snapshot`은 포워딩을 시작하지 않고 패널을 라이트, 다크 모드로 렌더링한 뒤 종료해요. 레이아웃 점검에 써요.
+
+릴리스는 `v`로 시작하는 태그를 올리면 GitHub Actions가 유니버설 앱을 빌드해 Release에 `EasyPort.zip`으로 올려요. 로컬에서는 `VERSION=0.1.0 ./build.sh release`로 같은 zip을 만들 수 있어요.
 
 | 파일 | 역할 |
 |---|---|

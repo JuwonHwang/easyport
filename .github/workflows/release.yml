@@ -1,0 +1,26 @@
+name: Release
+
+# v로 시작하는 태그를 올리면 유니버설 앱을 빌드해 GitHub Release에 EasyPort.zip으로 올린다.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: VERSION="${GITHUB_REF_NAME#v}" ./build.sh release
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/EasyPort.zip \
+            --title "EasyPort ${GITHUB_REF_NAME}" \
+            --generate-notes
