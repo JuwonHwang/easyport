@@ -8,6 +8,7 @@ struct PanelView: View {
     @State private var expanded: Set<String>
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
+    @AppStorage("treeView") private var treeView = false
 
     /// 화면에서 쓸 수 있는 높이에서 다른 구역이 차지하는 높이(약 360pt)를 뺀 값. 300~720pt로 제한한다.
     private static var hostListMaxHeight: CGFloat {
@@ -22,7 +23,7 @@ struct PanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             section("포워딩") { forwardList }
-            section("서버") { hostList }
+            section("서버", trailing: { hostControls }) { hostList }
             section("번호 입력") { quickConnect }
             Divider()
             footer
@@ -162,11 +163,36 @@ struct PanelView: View {
     }
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        section(title, trailing: { EmptyView() }, content: content)
+    }
+
+    private func section<Trailing: View, Content: View>(
+        _ title: String, @ViewBuilder trailing: () -> Trailing, @ViewBuilder content: () -> Content
+    ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            HStack(spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                trailing()
+            }
+            .frame(height: 16)
             content()
+        }
+    }
+
+    /// 목록/트리 전환은 모든 서버에 함께 적용되고, 새로고침은 펼친 서버를 모두 다시 조회하므로 제목 줄에 한 번만 둔다.
+    @ViewBuilder private var hostControls: some View {
+        if !expanded.isEmpty {
+            IconButton(
+                symbol: treeView ? "list.bullet" : "list.bullet.indent",
+                label: treeView ? "목록 보기" : "프로세스 트리 보기"
+            ) { treeView.toggle() }
+            IconButton(symbol: "arrow.clockwise", label: "펼친 서버 다시 조회") {
+                for host in expanded { manager.scan(host: host) }
+            }
+            .disabled(expanded.contains { manager.isScanning($0) })
         }
     }
 }
@@ -353,19 +379,11 @@ private struct HostSection: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
-                if expanded {
-                    IconButton(
-                        symbol: treeView ? "list.bullet" : "list.bullet.indent",
-                        label: treeView ? "목록 보기" : "프로세스 트리 보기"
-                    ) { treeView.toggle() }
-                    if manager.refreshing.contains(host) {
-                        ProgressView()
-                            .controlSize(.small)
-                            .frame(width: 22, height: 22)
-                            .help("포트를 다시 조회하는 중")
-                    } else {
-                        IconButton(symbol: "arrow.clockwise", label: "포트 다시 조회") { manager.scan(host: host) }
-                    }
+                if manager.isScanning(host) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(width: 22, height: 22)
+                        .help("포트를 조회하는 중")
                 }
             }
             .padding(.vertical, 4)

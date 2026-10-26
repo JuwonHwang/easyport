@@ -273,6 +273,13 @@ final class ForwardManager: ObservableObject {
         }
     }
 
+    /// 처음 조회 중이거나 기존 결과를 두고 다시 조회 중이면 참.
+    func isScanning(_ host: String) -> Bool {
+        if refreshing.contains(host) { return true }
+        if case .loading = scans[host] { return true }
+        return false
+    }
+
     /// 패널을 열 때 호출한다. 펼친 서버 중 마지막 조회 후 5초가 지난 서버만 다시 조회한다.
     func refreshOnOpen(_ hosts: Set<String>) {
         for host in hosts where Date().timeIntervalSince(lastScan[host] ?? .distantPast) > 5 {
