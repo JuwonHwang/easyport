@@ -39,6 +39,7 @@ struct PanelView: View {
             // 종료 확인 창(NSAlert)이 키 창이 될 때는 제외한다.
             guard let window = note.object as? NSWindow,
                   !String(describing: type(of: window)).contains("Alert") else { return }
+            manager.reloadHosts()
             manager.refreshOnOpen(expanded)
         }
     }
@@ -145,7 +146,8 @@ struct PanelView: View {
                         }
                     }
                 Spacer()
-                Button("SSH 설정 다시 읽기") { manager.reloadHosts() }
+                Button("SSH 설정 열기") { manager.openSSHConfig() }
+                    .help("~/.ssh/config를 기본 텍스트 편집기로 연다. 고친 내용은 패널을 다시 열 때 반영된다.")
                     .buttonStyle(.link)
                     .fixedSize()
                 Button("종료") { NSApp.terminate(nil) }

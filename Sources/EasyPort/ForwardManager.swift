@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 import Foundation
 
 struct Forward: Codable, Identifiable, Hashable {
@@ -165,7 +166,23 @@ final class ForwardManager: ObservableObject {
     }
 
     func reloadHosts() {
-        hosts = SSHConfig.hostNames()
+        let names = SSHConfig.hostNames()
+        if names != hosts { hosts = names }
+    }
+
+    /// ~/.ssh/config를 기본 텍스트 편집기로 연다. 파일이 없으면 권한 600으로 만든다.
+    func openSSHConfig() {
+        let dir = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".ssh", isDirectory: true)
+        let file = dir.appendingPathComponent("config")
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: file.path) {
+            try? fm.createDirectory(at: dir, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            fm.createFile(atPath: file.path, contents: nil, attributes: [.posixPermissions: 0o600])
+        }
+        // 확장자가 없어 기본 앱이 정해지지 않으므로, 일반 텍스트의 기본 편집기로 연다.
+        let editor = NSWorkspace.shared.urlForApplication(toOpen: .plainText)
+            ?? URL(fileURLWithPath: "/System/Applications/TextEdit.app")
+        NSWorkspace.shared.open([file], withApplicationAt: editor, configuration: NSWorkspace.OpenConfiguration())
     }
 
     // MARK: - 포워딩 조작
