@@ -10,6 +10,11 @@ struct Forward: Codable, Identifiable, Hashable {
     var localPort: Int
     /// 포트 목록에서 만든 포워딩은 원격 프로세스 이름을 기록한다.
     var label: String? = nil
+    /// 조회에서 원격 포트가 열려 있는 것을 확인했으면 참. 확인된 포워딩만 포트가 닫혔을 때 지운다.
+    /// 이 값이 없던 이전 버전의 저장 파일은, 포트 목록에서 만들어 이름이 있는 포워딩을 확인된 것으로 본다.
+    var confirmed: Bool? = nil
+
+    var isConfirmed: Bool { confirmed ?? (label != nil) }
     /// 켜 둔 포워딩은 끊기면 재연결하고, 앱을 다시 실행하면 복원한다.
     var enabled: Bool
 
@@ -68,8 +73,6 @@ final class ForwardManager: ObservableObject {
     /// 기존 결과를 보여 주면서 다시 조회 중인 서버.
     @Published private(set) var refreshing: Set<String> = []
     private var lastScan: [String: Date] = [:]
-    /// 앱 실행 중 조회에서 열려 있는 것을 확인한 "호스트:포트". 이 포트가 사라지면 포워딩을 지운다.
-    private var seenListening: Set<String> = []
     /// 포워딩을 자동으로 지운 이유. 다음에 패널을 열 때 지운다.
     @Published private(set) var notices: [String] = []
     /// 데모 데이터를 직접 넣은 스냅샷 렌더링 중이면 참. 이때는 실제 ssh 조회를 하지 않는다.
@@ -210,7 +213,11 @@ final class ForwardManager: ObservableObject {
         } else {
             let used = Set(forwards.map(\.localPort))
             let local = LocalPort.firstFree(from: remotePort, excluding: used)
-            let f = Forward(host: host, remotePort: remotePort, remoteTarget: remoteTarget, localPort: local, label: label, enabled: true)
+            // 포트 목록에서 누른 포워딩(이름이 있음)은 열린 포트에서 만든 것이므로 확인된 것으로 둔다.
+            let f = Forward(
+                host: host, remotePort: remotePort, remoteTarget: remoteTarget, localPort: local,
+                label: label, confirmed: label != nil, enabled: true
+            )
             forwards.append(f)
             status[f.id] = .stopped
             id = f.id
@@ -289,22 +296,25 @@ final class ForwardManager: ObservableObject {
 
     /// 조회 결과로 이 서버의 포워딩을 맞춘다. 조회가 성공했을 때만 호출한다.
     /// - 포트가 열려 있으면 이름(페이지 제목, 명령줄)을 최신 정보로 바꾼다.
-    /// - 이전에 열려 있던 포트가 사라졌으면 프로세스가 내려간 것으로 보고 포워딩을 지운다.
+    /// - 열린 것을 확인한 포워딩의 포트가 사라졌으면 프로세스가 내려간 것으로 보고 포워딩을 지운다.
+    ///   확인 여부는 저장되므로 앱을 다시 실행해도 유지된다.
     ///   한 번도 열린 것을 확인하지 못한 포워딩(서버가 뜨기 전에 번호로 미리 연 경우)은 지우지 않는다.
     private func reconcileForwards(host: String, scan: HostScan) {
         let byPort = Dictionary(scan.ports.map { ($0.port, $0) }, uniquingKeysWith: { a, _ in a })
         var changed = false
         for f in forwards where f.host == host {
-            let key = portKey(host, f.remotePort)
             if let port = byPort[f.remotePort] {
-                seenListening.insert(key)
+                guard let i = forwards.firstIndex(where: { $0.id == f.id }) else { continue }
+                if forwards[i].confirmed != true {
+                    forwards[i].confirmed = true
+                    changed = true
+                }
                 let label = port.http?.title ?? port.details?.shortCommand ?? port.process
-                if let label, label != f.label, let i = forwards.firstIndex(where: { $0.id == f.id }) {
+                if let label, label != f.label {
                     forwards[i].label = label
                     changed = true
                 }
-            } else if seenListening.contains(key) {
-                seenListening.remove(key)
+            } else if f.isConfirmed {
                 notices.append("\(host):\(f.remotePort) \(f.label ?? "")의 프로세스가 종료되어 포워딩을 지웠다.")
                 remove(f.id)
             }
